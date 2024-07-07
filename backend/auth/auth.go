@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -35,6 +36,13 @@ func GenerateJWT(userID int, userName string) (string, error) {
 	return tokenString, nil
 }
 
+type contextKey string
+
+const (
+	ContextUserID   contextKey = "userID"
+	ContextUserName contextKey = "userName"
+)
+
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -55,7 +63,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Token geçerli, request'i bir sonraki handler'a geçir
-		next.ServeHTTP(w, r)
+		// Token geçerli, request context içine userID ve userName ekleyin
+		ctx := context.WithValue(r.Context(), ContextUserID, claims.UserID)
+		ctx = context.WithValue(ctx, ContextUserName, claims.UserName)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

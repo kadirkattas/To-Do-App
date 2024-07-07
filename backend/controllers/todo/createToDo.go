@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"todo/backend/auth"
 	"todo/backend/controllers/structs"
 	"todo/backend/database"
 
@@ -30,6 +31,9 @@ func CreateToDo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := r.Context().Value(auth.ContextUserID).(int)
+	userName := r.Context().Value(auth.ContextUserName).(string)
+
 	v, _ := time.Now().UTC().MarshalText()
 
 	stmt, err := database.DB.Prepare("INSERT INTO TODO (UserID, UserName, Title, Description, PostDate) VALUES (?, ?, ?, ?, ?)")
@@ -39,7 +43,7 @@ func CreateToDo(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec()
+	_, err = stmt.Exec(userID, userName, todo.Title, todo.Description, string(v))
 	if err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
 			http.Error(w, "Email already exists", http.StatusConflict)
@@ -50,9 +54,12 @@ func CreateToDo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var toDoID int
-	database.DB.QueryRow("SELECT ID FROM TODO WHERE PostDate = ?", string(v)).Scan(&toDoID)
+	database.DB.QueryRow("SELECT ID FROM TODO WHERE PostDate = ? AND UserID = ?", string(v), userID).Scan(&toDoID)
 
 	todo.ID = toDoID
+	todo.UserID = userID
+	todo.UserName = userName
+	todo.PostDate = string(v)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(todo)

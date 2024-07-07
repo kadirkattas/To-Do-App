@@ -7,6 +7,7 @@ import (
 	"todo/backend/auth"
 	logincontroller "todo/backend/controllers/login"
 	registercontroller "todo/backend/controllers/register"
+	"todo/backend/controllers/todo"
 
 	"github.com/gorilla/mux"
 )
@@ -27,6 +28,8 @@ func ImportHandlers() {
 	router.HandleFunc("/api/v1/user/register", registercontroller.RegisterHandler).Methods("POST")
 	router.HandleFunc("/api/v1/user/login", logincontroller.LoginHandler).Methods("POST")
 
-	protectedRoutes := router.PathPrefix("/api/v1/user").Subrouter()
+	protectedRoutes := router.PathPrefix("/api/v1").Subrouter()
 	protectedRoutes.Use(auth.AuthMiddleware)
+	protectedRoutes.HandleFunc("/createtodo", todo.CreateToDo).Methods("POST")
+	protectedRoutes.HandleFunc("/gettodo", todo.GetToDo).Methods("GET")
 }
