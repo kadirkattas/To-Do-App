@@ -25,7 +25,7 @@ func InitializeDatabase() {
         Email TEXT NOT NULL UNIQUE,
         UserName TEXT NOT NULL,
         Password TEXT NOT NULL,
-		Token TEXT
+		token TEXT
     );
     CREATE TABLE IF NOT EXISTS TODO (
 		"ID" INTEGER UNIQUE,
